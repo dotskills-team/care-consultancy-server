@@ -25,6 +25,16 @@ const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getUserStats = catchAsync(async (_req: Request, res: Response) => {
+  const data = await UserServices.getUserStats();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User stats retrieved successfully",
+    data,
+  });
+});
+
 const getMe = catchAsync(async (req: Request, res: Response) => {
   const data = await UserServices.getSingleUser(req.user.userId);
   sendResponse(res, {
@@ -78,6 +88,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 export const UserControllers = {
   createUser,
   getAllUsers,
+  getUserStats,
   getMe,
   updateMe,
   getSingleUser,

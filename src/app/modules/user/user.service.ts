@@ -50,6 +50,48 @@ const getAllUsers = async (query: Record<string, string>) => {
   return { data, meta };
 };
 
+// Counts for the users page header. Role counts are keyed by lower-cased role name
+// (e.g. admin, editor, counsellor), so custom roles show up too.
+const getUserStats = async () => {
+  const [row] = await User.aggregate<{
+    total: number;
+    active: number;
+    byRole: { _id: string; count: number }[];
+  }>([
+    { $match: { isDeleted: false } },
+    { $lookup: { from: "roles", localField: "role", foreignField: "_id", as: "roleDoc" } },
+    { $unwind: "$roleDoc" },
+    {
+      $facet: {
+        totals: [{ $group: { _id: null, total: { $sum: 1 }, active: { $sum: { $cond: ["$isActive", 1, 0] } } } }],
+        byRole: [{ $group: { _id: "$roleDoc.name", count: { $sum: 1 } } }],
+      },
+    },
+    {
+      $project: {
+        total: { $ifNull: [{ $arrayElemAt: ["$totals.total", 0] }, 0] },
+        active: { $ifNull: [{ $arrayElemAt: ["$totals.active", 0] }, 0] },
+        byRole: 1,
+      },
+    },
+  ]);
+
+  const total = row?.total ?? 0;
+  const active = row?.active ?? 0;
+  const roles: Record<string, number> = {};
+  for (const r of row?.byRole ?? []) roles[r._id.toLowerCase()] = r.count;
+
+  return {
+    total,
+    active,
+    inactive: total - active,
+    superAdmin: roles["super_admin"] ?? 0,
+    admin: roles["admin"] ?? 0,
+    editor: roles["editor"] ?? 0,
+    counsellor: roles["counsellor"] ?? 0,
+  };
+};
+
 const getSingleUser = async (id: string) => {
   const user = await User.findOne({ _id: id, isDeleted: false }).populate(rolePopulate);
   if (!user) throw new AppError(httpStatus.NOT_FOUND, "User not found");
@@ -107,6 +149,7 @@ const deleteUser = async (id: string, requester: IAuthUser) => {
 export const UserServices = {
   createUser,
   getAllUsers,
+  getUserStats,
   getSingleUser,
   updateUser,
   updateProfile,

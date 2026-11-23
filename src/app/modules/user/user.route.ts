@@ -17,6 +17,8 @@ router.patch("/me", checkAuth(), validateRequest(updateProfileZodSchema), UserCo
 // is enforced in the service (assertCanUseRole).
 router.post("/", checkAuth("user:create"), validateRequest(createUserZodSchema), UserControllers.createUser);
 router.get("/", checkAuth("user:read"), UserControllers.getAllUsers);
+// Must be registered before "/:id" or "stats" would be read as an id.
+router.get("/stats", checkAuth("user:read"), UserControllers.getUserStats);
 router.get("/:id", checkAuth("user:read"), UserControllers.getSingleUser);
 router.patch("/:id", checkAuth("user:update"), validateRequest(updateUserZodSchema), UserControllers.updateUser);
 router.delete("/:id", checkAuth("user:delete"), UserControllers.deleteUser);

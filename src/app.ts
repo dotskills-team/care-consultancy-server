@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: [envVars.FRONTEND_URL, "http://localhost:3000"],
+    origin: [envVars.FRONTEND_URL, "http://localhost:3000", "https://care-academy-frontend.vercel.app"],
     credentials: true,
   }),
 );
